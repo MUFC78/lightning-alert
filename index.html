@@ -32,20 +32,22 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
-        .weather-info {
-            background-color: #e0e0e0; /* Grey */
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            font-size: 1.1em;
-        }
-
         .lightning-info {
             background-color: #e0e0e0; /* Grey */
             padding: 10px;
             border-radius: 5px;
             margin-bottom: 20px;
-            font-size: 1.1em;
+            font-size: 1.5em;
+            color: #9E1B32; /* Red */
+            font-weight: bold;
+        }
+
+        .weather-info {
+            background-color: #e0e0e0; /* Grey */
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 1em;
         }
 
         .button {
@@ -71,11 +73,11 @@
     </header>
 
     <div class="container">
-        <h2>Weather Information</h2>
-        <div class="weather-info" id="weather-info">Loading weather data...</div>
-
         <h2>Lightning Alerts</h2>
         <div class="lightning-info" id="lightning-info">Checking for lightning...</div>
+
+        <h2>Weather Information</h2>
+        <div class="weather-info" id="weather-info">Loading weather data...</div>
 
         <a href="#" class="button" onclick="liveUpdate()">Live Update</a>
     </div>
@@ -118,11 +120,11 @@
                 const temperatureFahrenheit = (temperatureCelsius * 9/5) + 32;
 
                 document.getElementById('weather-info').innerHTML = `
-                    Current Weather: ${weatherDescription}<br>
-                    Wind: ${windSpeed} mph ${windDirection}<br>
-                    Sunrise: ${sunrise}<br>
-                    Sunset: ${sunset}<br>
-                    Temperature: ${temperatureFahrenheit.toFixed(1)}°F
+                    <strong>Temperature:</strong> ${temperatureFahrenheit.toFixed(1)}°F<br>
+                    <strong>Wind:</strong> ${windSpeed} mph ${windDirection}<br>
+                    <strong>Sunrise:</strong> ${sunrise}<br>
+                    <strong>Sunset:</strong> ${sunset}<br>
+                    <strong>Conditions:</strong> ${weatherDescription}
                 `;
             } catch (error) {
                 document.getElementById('weather-info').innerHTML = 'Error fetching data';
@@ -146,7 +148,7 @@
 
                 if (alertsWithinRadius.length > 0) {
                     document.getElementById('lightning-info').innerHTML = `
-                        Warning! Lightning detected within 10 miles of McClallen Park.
+                        <strong>Warning!</strong> Lightning detected within 10 miles of McClallen Park.
                     `;
                 } else {
                     document.getElementById('lightning-info').innerHTML = 'No lightning in the area within 10 miles.';
@@ -163,12 +165,8 @@
             fetchLightningAlerts();
         }
 
-        // Fetch initial weather and lightning data on page load
-        fetchWeatherData();
-        fetchLightningAlerts();
-
         // Set interval to refresh lightning data every 2 minutes
-        setInterval(fetchLightningAlerts, 120000); // Refresh every 2 minutes
+        // but only fetch data manually when user clicks the button
     </script>
 </body>
 </html>
