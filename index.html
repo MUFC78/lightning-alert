@@ -119,14 +119,19 @@
 
                 const weatherInfo = data.data[0];
                 const weatherDescription = weatherInfo.weather.description;
-                const temperatureCelsius = weatherInfo.temp;
+                const windSpeed = weatherInfo.wind_spd;
+                const windDirection = weatherInfo.wind_cdir;
+                const sunrise = weatherInfo.sunrise;
+                const sunset = weatherInfo.sunset;
 
-                // Convert Celsius to Fahrenheit
+                const temperatureCelsius = weatherInfo.temp;
                 const temperatureFahrenheit = (temperatureCelsius * 9/5) + 32;
 
-                // Display weather data
                 document.getElementById('weather-info').innerHTML = `
                     Current Weather: ${weatherDescription}<br>
+                    Wind: ${windSpeed} mph ${windDirection}<br>
+                    Sunrise: ${sunrise}<br>
+                    Sunset: ${sunset}<br>
                     Temperature: ${temperatureFahrenheit.toFixed(1)}°F
                 `;
             } catch (error) {
@@ -177,4 +182,3 @@
     </script>
 </body>
 </html>
-
