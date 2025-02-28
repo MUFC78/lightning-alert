@@ -7,9 +7,9 @@
     <style>
         body {
             font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
         }
 
         header {
@@ -23,10 +23,6 @@
             margin: 0;
         }
 
-        h2 {
-            color: #9E1B32; /* Red */
-        }
-
         .container {
             width: 80%;
             margin: 20px auto;
@@ -36,7 +32,7 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
-        .weather-info, .lightning-info {
+        .weather-info {
             background-color: #e0e0e0; /* Grey */
             padding: 10px;
             border-radius: 5px;
@@ -44,12 +40,12 @@
             font-size: 1.1em;
         }
 
-        #raw-data {
-            background-color: #f4f4f4;
+        .lightning-info {
+            background-color: #e0e0e0; /* Grey */
             padding: 10px;
             border-radius: 5px;
-            font-size: 0.9em;
-            color: #555;
+            margin-bottom: 20px;
+            font-size: 1.1em;
         }
 
         .button {
@@ -60,7 +56,6 @@
             border-radius: 5px;
             text-align: center;
             cursor: pointer;
-            text-decoration: none;
             font-size: 1em;
             margin-top: 20px;
         }
@@ -81,8 +76,6 @@
 
         <h2>Lightning Alerts</h2>
         <div class="lightning-info" id="lightning-info">Checking for lightning...</div>
-
-        <pre id="raw-data"></pre> <!-- For displaying raw data -->
 
         <a href="#" class="button" onclick="liveUpdate()">Live Update</a>
     </div>
@@ -113,9 +106,6 @@
             try {
                 const response = await fetch(weatherUrl);
                 const data = await response.json();
-
-                // Display the raw JSON data for debugging
-                document.getElementById('raw-data').textContent = JSON.stringify(data, null, 2);
 
                 const weatherInfo = data.data[0];
                 const weatherDescription = weatherInfo.weather.description;
