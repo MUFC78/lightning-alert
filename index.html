@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lightning Alert</title>
+</head>
+<body>
+    <h2>McClallen Park Lightning Alert</h2>
+    <button onclick="getLightningData()">Check Lightning Status</button>
+    <p id="alertMessage">Waiting for update...</p>
+
+    <script>
+        const apiKey = 'YOUR_API_KEY'; // Replace with your real API key
+        const parkLatitude = 40.6126; 
+        const parkLongitude = -89.4593; 
+        const radiusMiles = 10;
+
+        async function getLightningData() {
+            try {
+                const response = await fetch(`https://api.weatherapi.com/v1/lightning.json?key=${apiKey}&q=${parkLatitude},${parkLongitude}&radius=${radiusMiles}`);
+                if (!response.ok) throw new Error('Failed to fetch lightning data');
+
+                const data = await response.json();
+                const message = data.length > 0 
+                    ? `⚡ Lightning detected within ${radiusMiles} miles! Stay safe.` 
+                    : '✅ No lightning detected in the area.';
+                
+                document.getElementById('alertMessage').innerText = message;
+            } catch (error) {
+                console.error('Error fetching lightning data:', error);
+                document.getElementById('alertMessage').innerText = '❌ Error fetching data.';
+            }
+        }
+
+        // Auto-fetch every 5 minutes
+        setInterval(getLightningData, 300000);
+    </script>
+</body>
+</html>
