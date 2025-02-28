@@ -3,38 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lightning Alert</title>
+    <title>Weather and Lightning Alerts for McClallen Park</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        header {
+            background-color: #9E1B32; /* Red */
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0;
+        }
+
+        h2 {
+            color: #9E1B32; /* Red */
+        }
+
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .weather-info, .lightning-info {
+            background-color: #e0e0e0; /* Grey */
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+
+        #raw-data {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .button {
+            display: inline-block;
+            background-color: #9E1B32; /* Red */
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 1em;
+            margin-top: 20px;
+        }
+
+        .button:hover {
+            background-color: #7c1424; /* Darker Red */
+        }
+    </style>
 </head>
 <body>
-    <h2>McClallen Park Lightning Alert</h2>
-    <button onclick="getLightningData()">Check Lightning Status</button>
-    <p id="alertMessage">Waiting for update...</p>
+    <header>
+        <h1>Weather and Lightning Alerts for McClallen Park</h1>
+    </header>
+
+    <div class="container">
+        <h2>Weather Information</h2>
+        <div class="weather-info" id="weather-info">Loading weather data...</div>
+
+        <h2>Lightning Alerts</h2>
+        <div class="lightning-info" id="lightning-info">Checking for lightning...</div>
+
+        <pre id="raw-data"></pre> <!-- For displaying raw data -->
+
+        <a href="#" class="button" onclick="liveUpdate()">Live Update</a>
+    </div>
 
     <script>
-        const apiKey = 'b40a6e381aee40dda3d20639252802'; // Replace with your real API key
-        const parkLatitude = 40.6126; 
-        const parkLongitude = -89.4593; 
-        const radiusMiles = 10;
+        const apiKey = '3c21a23e652c431aa2a48f6bc6b94bff'; // Your Weatherbit API key
+        const latitude = 40.6354; // McClallen Park latitude
+        const longitude = -89.4735; // McClallen Park longitude
+        const radius = 10; // 10 miles radius
 
-        async function getLightningData() {
+        const weatherUrl = `https://api.weatherbit.io/v2.0/current?lat=${latitude}&lon=${longitude}&key=${apiKey}`;
+        const lightningUrl = `https://api.weatherbit.io/v2.0/alerts?lat=${latitude}&lon=${longitude}&key=${apiKey}`;
+
+        // Haversine formula to calculate the distance between two coordinates (in miles)
+        function haversine(lat1, lon1, lat2, lon2) {
+            const R = 3958.8; // Radius of Earth in miles
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        // Function to fetch weather data
+        async function fetchWeatherData() {
             try {
-                const response = await fetch(`https://api.weatherapi.com/v1/lightning.json?key=${apiKey}&q=${parkLatitude},${parkLongitude}&radius=${radiusMiles}`);
-                if (!response.ok) throw new Error('Failed to fetch lightning data');
-
+                const response = await fetch(weatherUrl);
                 const data = await response.json();
-                const message = data.length > 0 
-                    ? `⚡ Lightning detected within ${radiusMiles} miles! Stay safe.` 
-                    : '✅ No lightning detected in the area.';
-                
-                document.getElementById('alertMessage').innerText = message;
+
+                // Display the raw JSON data for debugging
+                document.getElementById('raw-data').textContent = JSON.stringify(data, null, 2);
+
+                const weatherInfo = data.data[0];
+                const weatherDescription = weatherInfo.weather.description;
+                const temperatureCelsius = weatherInfo.temp;
+
+                // Convert Celsius to Fahrenheit
+                const temperatureFahrenheit = (temperatureCelsius * 9/5) + 32;
+
+                // Display weather data
+                document.getElementById('weather-info').innerHTML = `
+                    Current Weather: ${weatherDescription}<br>
+                    Temperature: ${temperatureFahrenheit.toFixed(1)}°F
+                `;
             } catch (error) {
-                console.error('Error fetching lightning data:', error);
-                document.getElementById('alertMessage').innerText = '❌ Error fetching data.';
+                document.getElementById('weather-info').innerHTML = 'Error fetching data';
+                console.error(error);
             }
         }
 
-        // Auto-fetch every 5 minutes
-        setInterval(getLightningData, 300000);
+        // Function to fetch lightning alerts
+        async function fetchLightningAlerts() {
+            try {
+                const response = await fetch(lightningUrl);
+                const data = await response.json();
+
+                // Filter lightning alerts based on the 10-mile radius
+                const alertsWithinRadius = data.alerts.filter(alert => {
+                    const alertLat = alert.lat;
+                    const alertLon = alert.lon;
+                    const distance = haversine(latitude, longitude, alertLat, alertLon);
+                    return distance <= radius;
+                });
+
+                if (alertsWithinRadius.length > 0) {
+                    document.getElementById('lightning-info').innerHTML = `
+                        Warning! Lightning detected within 10 miles of McClallen Park.
+                    `;
+                } else {
+                    document.getElementById('lightning-info').innerHTML = 'No lightning in the area within 10 miles.';
+                }
+            } catch (error) {
+                console.error('Error fetching lightning data', error);
+                document.getElementById('lightning-info').innerHTML = 'Error fetching lightning data';
+            }
+        }
+
+        // Live update function to refresh both weather and lightning alerts
+        function liveUpdate() {
+            fetchWeatherData();
+            fetchLightningAlerts();
+        }
+
+        // Fetch initial weather and lightning data on page load
+        fetchWeatherData();
+        fetchLightningAlerts();
+
+        // Set interval to refresh lightning data every 2 minutes
+        setInterval(fetchLightningAlerts, 120000); // Refresh every 2 minutes
     </script>
 </body>
 </html>
+
