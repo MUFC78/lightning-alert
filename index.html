@@ -93,13 +93,17 @@
 
         function convertToCST(gmtTime) {
             const [hours, minutes] = gmtTime.split(':').map(Number);
-            let cstHours = hours - 6; // Convert GMT to CST (GMT-6)
+            let cstHours = hours - 6; // Convert GMT to CST (Chicago time)
             
             if (cstHours < 0) {
                 cstHours += 24; // Adjust for previous day
             }
 
-            return `${cstHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} CST`;
+            // Determine AM/PM
+            const period = cstHours >= 12 ? "PM" : "AM";
+            const displayHours = ((cstHours % 12) || 12); // Convert to 12-hour format
+
+            return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period} CST`;
         }
 
         async function fetchWeatherData() {
