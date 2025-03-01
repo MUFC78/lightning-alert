@@ -60,6 +60,7 @@
             cursor: pointer;
             font-size: 1em;
             margin-top: 20px;
+            text-decoration: none;
         }
 
         .button:hover {
@@ -84,89 +85,65 @@
 
     <script>
         const apiKey = '3c21a23e652c431aa2a48f6bc6b94bff'; // Your Weatherbit API key
-        const latitude = 40.6354; // McClallen Park latitude
-        const longitude = -89.4735; // McClallen Park longitude
-        const radius = 10; // 10 miles radius
+        const latitude = 40.6354;
+        const longitude = -89.4735;
 
         const weatherUrl = `https://api.weatherbit.io/v2.0/current?lat=${latitude}&lon=${longitude}&key=${apiKey}`;
         const lightningUrl = `https://api.weatherbit.io/v2.0/alerts?lat=${latitude}&lon=${longitude}&key=${apiKey}`;
 
-        // Haversine formula to calculate the distance between two coordinates (in miles)
-        function haversine(lat1, lon1, lat2, lon2) {
-            const R = 3958.8; // Radius of Earth in miles
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c;
+        function convertToCST(gmtTime) {
+            const [hours, minutes] = gmtTime.split(':').map(Number);
+            let cstHours = hours - 6; // Convert GMT to CST (GMT-6)
+            
+            if (cstHours < 0) {
+                cstHours += 24; // Adjust for previous day
+            }
+
+            return `${cstHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} CST`;
         }
 
-        // Function to fetch weather data
         async function fetchWeatherData() {
             try {
                 const response = await fetch(weatherUrl);
+                if (!response.ok) throw new Error('Weather API request failed');
                 const data = await response.json();
-
-                const weatherInfo = data.data[0];
-                const weatherDescription = weatherInfo.weather.description;
-                const windSpeed = weatherInfo.wind_spd;
-                const windDirection = weatherInfo.wind_cdir;
-                const sunrise = weatherInfo.sunrise;
-                const sunset = weatherInfo.sunset;
-
-                const temperatureCelsius = weatherInfo.temp;
-                const temperatureFahrenheit = (temperatureCelsius * 9/5) + 32;
+                const weather = data.data[0];
 
                 document.getElementById('weather-info').innerHTML = `
-                    <strong>Temperature:</strong> ${temperatureFahrenheit.toFixed(1)}°F<br>
-                    <strong>Wind:</strong> ${windSpeed} mph ${windDirection}<br>
-                    <strong>Sunrise:</strong> ${sunrise}<br>
-                    <strong>Sunset:</strong> ${sunset}<br>
-                    <strong>Conditions:</strong> ${weatherDescription}
+                    <strong>Temperature:</strong> ${(weather.temp * 9/5 + 32).toFixed(1)}°F<br>
+                    <strong>Wind:</strong> ${weather.wind_spd} mph ${weather.wind_cdir}<br>
+                    <strong>Sunrise:</strong> ${convertToCST(weather.sunrise)}<br>
+                    <strong>Sunset:</strong> ${convertToCST(weather.sunset)}<br>
+                    <strong>Conditions:</strong> ${weather.weather.description}
                 `;
             } catch (error) {
-                document.getElementById('weather-info').innerHTML = 'Error fetching data';
+                document.getElementById('weather-info').innerHTML = 'Error fetching weather data';
                 console.error(error);
             }
         }
 
-        // Function to fetch lightning alerts
         async function fetchLightningAlerts() {
             try {
                 const response = await fetch(lightningUrl);
+                if (!response.ok) throw new Error('Lightning API request failed');
                 const data = await response.json();
 
-                // Filter lightning alerts based on the 10-mile radius
-                const alertsWithinRadius = data.alerts.filter(alert => {
-                    const alertLat = alert.lat;
-                    const alertLon = alert.lon;
-                    const distance = haversine(latitude, longitude, alertLat, alertLon);
-                    return distance <= radius;
-                });
-
-                if (alertsWithinRadius.length > 0) {
-                    document.getElementById('lightning-info').innerHTML = `
-                        <strong>Warning!</strong> Lightning detected within 10 miles of McClallen Park.
-                    `;
+                if (data.alerts?.length) {
+                    document.getElementById('lightning-info').innerHTML = 
+                        '<strong>Warning!</strong> Lightning detected in the area.';
                 } else {
-                    document.getElementById('lightning-info').innerHTML = 'No lightning in the area within 10 miles.';
+                    document.getElementById('lightning-info').innerHTML = 'No active lightning alerts.';
                 }
             } catch (error) {
-                console.error('Error fetching lightning data', error);
                 document.getElementById('lightning-info').innerHTML = 'Error fetching lightning data';
+                console.error(error);
             }
         }
 
-        // Live update function to refresh both weather and lightning alerts
         function liveUpdate() {
             fetchWeatherData();
             fetchLightningAlerts();
         }
-
-        // Set interval to refresh lightning data every 2 minutes
-        // but only fetch data manually when user clicks the button
     </script>
 </body>
 </html>
