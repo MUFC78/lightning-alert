@@ -91,20 +91,7 @@
         const weatherUrl = `https://api.weatherbit.io/v2.0/current?lat=${latitude}&lon=${longitude}&key=${apiKey}`;
         const lightningUrl = `https://api.weatherbit.io/v2.0/alerts?lat=${latitude}&lon=${longitude}&key=${apiKey}`;
 
-        function convertToCST(gmtTime) {
-            const [hours, minutes] = gmtTime.split(':').map(Number);
-            let cstHours = hours - 6; // Convert GMT to CST (Chicago time)
-            
-            if (cstHours < 0) {
-                cstHours += 24; // Adjust for previous day
-            }
-
-            // Determine AM/PM
-            const period = cstHours >= 12 ? "PM" : "AM";
-            const displayHours = ((cstHours % 12) || 12); // Convert to 12-hour format
-
-            return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period} CST`;
-        }
+        let lastLightningTimestamp = null;
 
         async function fetchWeatherData() {
             try {
@@ -116,8 +103,6 @@
                 document.getElementById('weather-info').innerHTML = `
                     <strong>Temperature:</strong> ${(weather.temp * 9/5 + 32).toFixed(1)}°F<br>
                     <strong>Wind:</strong> ${weather.wind_spd} mph ${weather.wind_cdir}<br>
-                    <strong>Sunrise:</strong> ${convertToCST(weather.sunrise)}<br>
-                    <strong>Sunset:</strong> ${convertToCST(weather.sunset)}<br>
                     <strong>Conditions:</strong> ${weather.weather.description}
                 `;
             } catch (error) {
@@ -131,12 +116,19 @@
                 const response = await fetch(lightningUrl);
                 if (!response.ok) throw new Error('Lightning API request failed');
                 const data = await response.json();
-
+                const now = new Date();
+                
                 if (data.alerts?.length) {
+                    lastLightningTimestamp = now;
                     document.getElementById('lightning-info').innerHTML = 
                         '<strong>Warning!</strong> Lightning detected in the area.';
                 } else {
-                    document.getElementById('lightning-info').innerHTML = 'No active lightning alerts.';
+                    if (lastLightningTimestamp && (now - lastLightningTimestamp) / 60000 <= 30) {
+                        document.getElementById('lightning-info').innerHTML = 
+                            '<strong>Warning!</strong> Lightning detected in the area.';
+                    } else {
+                        document.getElementById('lightning-info').innerHTML = 'No active lightning alerts.';
+                    }
                 }
             } catch (error) {
                 document.getElementById('lightning-info').innerHTML = 'Error fetching lightning data';
